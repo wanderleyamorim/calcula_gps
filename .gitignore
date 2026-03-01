@@ -1,0 +1,14 @@
+# Ignorar dados sensíveis dos segurados
+anexos/
+*.pdf
+
+# Ignorar resultados gerados com possíveis PIIs
+Gps_*.html
+*.html
+
+# Ignorar arquivos do ambiente Python
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
