@@ -147,7 +147,11 @@ _RE_VALOR = re.compile(r'^(\d{1,3}(?:\.\d{3})*,\d{2})$')
 _RE_DATA_PGTO = re.compile(r'^\d{2}/\d{2}/\d{4}$')
 _INDICADORES_CONHECIDOS = {
     'IREC-MEI', 'IREC-LC123', 'IREC-INDPEND',
+    'IREC-FBR',        # FBR validado (5% suficiente p/ Apos. Idade)
+    'IREC-FBR-DEF',    # FBR DEFINITIVAMENTE validado (também ok, não gera GPS)
+    'IREC-FBR-IND',    # FBR INDEVIDO/indeferido -> gera 1830 (5%->11%)
     'PREC-MENOR-MIN', 'PSC-MEN-SM-EC103',
+    'PREC-FBR',        # PREC-FBR genérico (reservado caso apareça)
     'PREM-EXT', 'IREM-INDPEND',
 }
 
@@ -478,7 +482,9 @@ def processar(dados_painel, dados_contrib):
 
         # Verificação de Extemporâneos / Pendências
         # Verificação de Extemporâneos / Pendências
-        indicadores_alerta_prefixes = {'PREM-EXT', 'IREC-INDPEND', 'IREC-GFIP', 'PREC-FBR', 'PREC-FACULTCONC'}
+        # PREC-FBR é regra de negócio (FBR não validado -> GPS 1830), NÃO alerta extemporâneo.
+        # Por isso está excluído desta lista de alertas.
+        indicadores_alerta_prefixes = {'PREM-EXT', 'IREC-INDPEND', 'IREC-GFIP', 'PREC-FACULTCONC'}
         encontrados = set()
         for ind in indicadores:
             for alerta in indicadores_alerta_prefixes:
@@ -515,13 +521,21 @@ def processar(dados_painel, dados_contrib):
         #            - Se LC123 puro (sem FBR): validar >= 11% Sal. Min.
         #              Abaixo do mín: Fac. -> código original (1929/1473/1406), CI -> 1295
         # ---------------------------------------------------------------
-        elif 'IREC-LC123' in indicadores:
-            # Checar se tem FBR validado (IREC-FBR)
-            has_irec_fbr = any(ind == 'IREC-FBR' for ind in indicadores)
-            # Checar se tem FBR NÃO validado (PREC-FBR...)
-            has_prec_fbr = any(ind.startswith('PREC-FBR') for ind in indicadores)
+        elif 'IREC-LC123' in indicadores or 'IREC-FBR-IND' in indicadores or any(ind.startswith('PREC-FBR') for ind in indicadores):
+            # IREC-LC123 = simplificado (11% ou FBR 5%)
+            # IREC-FBR-IND = FBR indevido/indeferido         -> gera GPS 1830
+            # IREC-FBR-DEF = FBR DEFINITIVAMENTE validado    -> NÃO gera GPS (ok)
+            # PREC-FBR     = genérico (caso apareça no PDF) -> gera GPS 1830
 
-            if has_irec_fbr and not has_prec_fbr:
+            # FBR validado: IREC-FBR puro OU IREC-FBR-DEF (definitivo)
+            has_irec_fbr = 'IREC-FBR' in indicadores or 'IREC-FBR-DEF' in indicadores
+            # FBR NÃO validado: somente IREC-FBR-IND ou PREC-FBR genérico
+            has_fbr_nao_validado = any(
+                ind == 'IREC-FBR-IND' or ind.startswith('PREC-FBR')
+                for ind in indicadores
+            )
+
+            if has_irec_fbr and not has_fbr_nao_validado:
                 # FBR validado: 5% é suficiente para aposentadoria por idade
                 # Verificar se ao menos pagou 5% do SM
                 valor_minimo_5 = round(sm * 0.05, 2)
@@ -538,9 +552,11 @@ def processar(dados_painel, dados_contrib):
                 final_value = diff
                 motivo = f"FBR validado mas abaixo 5% (Devido {fmt_val(valor_minimo_5)} - Pago {fmt_val(val_pago)})"
 
-            elif has_prec_fbr:
+            elif has_fbr_nao_validado:
                 # FBR NÃO validado -> SEMPRE gerar GPS 1830 (5%->11%) = SM × 6%
-                # Se também pagou abaixo de 5%, gerar GPS 1929 ADICIONAL para o déficit
+                # Regra: para Aposentadoria por Idade, 5% não basta se FBR não é validado.
+                # O segurado precisa complementar até 11% do SM.
+                # Se também pagou abaixo de 5%, gerar GPS 1929 ADICIONAL para o déficit.
 
                 val_pago = contribuicao if contribuicao else 0
                 valor_minimo_5 = round(sm * 0.05, 2)
