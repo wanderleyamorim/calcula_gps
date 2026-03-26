@@ -1,4 +1,4 @@
-# Calcula GPS Antigravity 🦅
+# Calcula GPS  🦅
 
 Este projeto é uma ferramenta de automação construída para ler extratos do CNIS (Painel do Cidadão + Contribuição/Recolhimento) e gerar automaticamente os arquivos HTML de GPS (Guia da Previdência Social) prontos para importação no sistema SAL (Sistema de Acréscimos Legais) da Receita Federal.
 
