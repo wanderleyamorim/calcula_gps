@@ -1,6 +1,8 @@
-# Calcula GPS  🦅
+# Calcula GPS 🦅
 
 Este projeto é uma ferramenta de automação construída para ler extratos do CNIS (Painel do Cidadão + Contribuição/Recolhimento) e gerar automaticamente os arquivos HTML de GPS (Guia da Previdência Social) prontos para importação no sistema SAL (Sistema de Acréscimos Legais) da Receita Federal.
+
+Utilizamos o **Gemini CLI** integrado diretamente ao **VS Code** (ou qualquer IDE) para orquestrar as regras de negócio de forma autônoma e inteligente.
 
 ⚠️ **DISCLAIMER OFICIAL E RESPONSABILIDADE DOS DADOS** ⚠️
 
@@ -10,23 +12,28 @@ Esta ferramenta **NÃO** é uma aplicação oficial do Governo Federal ou do INS
 
 **Este repositório e seus criadores não assumem qualquer responsabilidade pelo uso indevido da ferramenta.** O uso deste script não exime o servidor de sua responsabilidade legal e funcional. **Nenhum dado real de segurado (PDFs de CNIS, extratos, etc.) deve ser comitado, publicado ou transmitido** através de repositórios públicos, servidores externos ou modelos de IA não homologados.
 
-Ao baixar e utilizar este código, o servidor assume **inteira e exclusiva responsabilidade** pela segurança dos dados processados em sua máquina local e pela conferência dos valores e códigos gerados antes de apresentá-los ao segurado.
-
 ## 🛡️ Segurança e Privacidade (Privacy-First)
 
 A arquitetura do projeto foi desenhada para processamento **100% local**:
 
 1. **Motor Local Python:** O script `process_cnis_v2.py` lê os PDFs e gera os HTMLs localmente na máquina do servidor. Nenhum dado de CNIS é enviado para a nuvem.
-2. **Isolamento de Dados:** O arquivo `.gitignore` restringe severamente os arquivos que são versionados. A pasta `anexos/` (onde os PDFs dos segurados devem ser colocados) é sumariamente ignorada pelo Git.
-3. **Regras de Negócio Injetadas:** As regras (CI vs Facultativo, LC123, FBR, etc.) estão centralizadas localmente, garantindo que o cruzamento de indicadores do CNIS obedeça estritamente à legislação previdenciária sem depender de APIs externas para a lógica central.
+2. **Orquestração via Gemini CLI:** O projeto utiliza a estrutura `.gemini/` para automatizar tarefas via Agente Autônomo, garantindo que as regras de negócio (B41, B42, FBR, etc.) sejam aplicadas corretamente sem intervenção manual constante.
+3. **Isolamento de Dados:** A pasta `anexos/` (onde os PDFs dos segurados devem ser colocados) é ignorada pelo Git para sua total segurança.
 
-## 📁 Estrutura de Diretórios e Ocultamento
+## 📁 Estrutura do Projeto (.gemini)
 
-Os dados privados **NÃO** fazem parte deste repositório e nunca devem ser versionados.
+O projeto é potencializado pelo **Gemini CLI**, permitindo um workflow de "Agente Autônomo":
 
-- `process_cnis_v2.py`: Script principal de faturamento e regras de GPS.
-- `.agents/rules/memory.md`: Documentação viva das regras de negócio do INSS aplicadas no código (Códigos de CI vs Facultativo, etc).
-- `anexos/`: **[IGNORADO PELO GIT]** Repositório local secreto onde os PDFs (Painel Cidadão, Contribuição) devem ser colocados pelo servidor para processamento temporário.
-- `*.html`: **[IGNORADO PELO GIT]** As guias geradas são ignoradas para evitar vazamento acidental de dados previdenciários.
+- `.gemini/hooks/`: Automatiza o carregamento de arquivos da pasta `anexos/`.
+- `.gemini/skills/gps-agent/`: Skill inteligente que detém o conhecimento das regras previdenciárias.
+- `.gemini/commands/`: Ponto de entrada simplificado via comando `/calcula`.
+- `anexos/`: **[PRIVADO]** Local onde você coloca os PDFs para processamento.
+
+## 🚀 Como Usar no VS Code
+
+1. Abra o projeto no **VS Code**.
+2. Abra o terminal integrado e inicie o **Gemini CLI** (`gemini`).
+3. Coloque os PDFs em `anexos/`.
+4. Basta falar o problema: *"B41, analise os erros"* ou *"B42, complemente 11% para 20%"*.
 
 Feito de servidor para servidor, focado em precisão matemática, segurança e privacidade no cumprimento legal.
