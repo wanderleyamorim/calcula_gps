@@ -1,0 +1,8 @@
+description = "Aciona o Agente GPS para processar os PDFs na pasta anexos."
+prompt = """
+Análise e processamento de extrato CNIS.
+Use a skill 'gps-agent' para decidir a melhor estratégia com base nos arquivos atuais e no que eu pedir (ex: B41, B42, FBR).
+
+Arquivos atuais: !{ls -lh anexos/}
+Pedido do usuário: {{args}}
+"""

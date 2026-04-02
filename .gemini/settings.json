@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "BeforeAgent": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "check-anexos",
+            "type": "command",
+            "command": "bash $GEMINI_PROJECT_DIR/.gemini/hooks/check-anexos.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "skills": {
+    "enabled": true
+  }
+}
