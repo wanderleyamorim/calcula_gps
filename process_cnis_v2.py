@@ -128,14 +128,19 @@ def fmt_val(f):
 # PARSER DO PDF — EXTRAÇÃO DE TEXTO
 # ===========================================================================
 def extrair_texto_pdf(caminho_pdf):
-    """Extrai texto de todas as páginas do PDF usando PyMuPDF (fitz)."""
-    import fitz
-    doc = fitz.open(caminho_pdf)
-    texto_completo = ""
-    for pagina in doc:
-        texto_completo += pagina.get_text() + "\n"
-    doc.close()
-    return texto_completo
+    """Extrai texto do PDF usando pdftotext (poppler-utils)."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ['pdftotext', caminho_pdf, '-'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Erro ao extrair texto do PDF {caminho_pdf}: {e}")
+        return ""
 
 
 # ===========================================================================
@@ -167,8 +172,9 @@ def parse_painel_cidadao(texto):
     linhas = texto.split('\n')
     linhas = [l.strip() for l in linhas if l.strip()]
 
-    # Detectar seções de Contribuições (não Remunerações)
+    # Detectar seções de Contribuições e Remunerações
     em_contribuicoes = False
+    em_remuneracoes = False
     ultimo_tipo_filiado = "Indefinido" # Armazena o tipo de filiado atual do bloco
 
     i = 0
@@ -183,13 +189,13 @@ def parse_painel_cidadao(texto):
              # Precisamos varrer as próximas linhas para encontrar o tipo real.
              _tipos_conhecidos = {
                  'Facultativo': 'Facultativo',
-                 'Contribuinte Individual': 'CI',
+                 'Contribuinte': 'CI',  # Busca por 'Contribuinte' (linha pode ter só "Contribuinte")
                  'Empregado': 'Empregado',
                  'Doméstico': 'Doméstico',
                  'Avulso': 'Avulso',
              }
-             # Procurar tipo nas próximas linhas (max 10)
-             for look in range(1, min(11, len(linhas) - i)):
+             # Procurar tipo nas próximas linhas (max 15)
+             for look in range(1, min(15, len(linhas) - i)):
                  prox = linhas[i + look].strip()
                  for key, val in _tipos_conhecidos.items():
                      if key in prox:
@@ -198,46 +204,83 @@ def parse_painel_cidadao(texto):
                  else:
                      continue
                  break  # Encontrou tipo -> parar
-             
-             # Sai do modo contribuições temporariamente até confirmar o próximo bloco
+
+             # Sai do modo contribuições/remunerações temporariamente até confirmar o próximo bloco
              em_contribuicoes = False
+             em_remuneracoes = False
              i += 1
              continue
+
+        # Atualizar tipo filiado quando encontrar novo vínculo RECOLHIMENTO
+        # Isso é necessário porque o PDF pode ter múltiplos vínculos com tipos diferentes
+        if 'RECOLHIMENTO' in linha:
+            # Procurar tipo filiado nas próximas linhas
+            _tipos_conhecidos = {
+                'Facultativo': 'Facultativo',
+                'Contribuinte': 'CI',
+                'Empregado': 'Empregado',
+                'Doméstico': 'Doméstico',
+                'Avulso': 'Avulso',
+            }
+            for look in range(1, min(15, len(linhas) - i)):
+                prox = linhas[i + look].strip()
+                for key, val in _tipos_conhecidos.items():
+                    if key in prox:
+                        ultimo_tipo_filiado = val
+                        break
+                else:
+                    continue
+                break
 
         # Detectar início de seção "Contribuições"
         if linha.startswith('Contribui') and i + 1 < len(linhas) and 'Compet' in linhas[i + 1]:
             em_contribuicoes = True
+            em_remuneracoes = False
             i += 1
             continue
 
-        # Detectar saída de seção contribuições
-        if linha.startswith('Remunera') or linha.startswith('Rela') or 'Seq.' in linha:
-            if 'Contribui' not in linha:
+        # Detectar início de seção "Remunerações"
+        if linha.startswith('Remunera') and i + 1 < len(linhas) and 'Compet' in linhas[i + 1]:
+            em_remuneracoes = True
+            em_contribuicoes = False
+            i += 1
+            continue
+
+        # Detectar saída de seção contribuições/remunerações
+        if linha.startswith('Rela') or 'Seq.' in linha:
+            if 'Contribui' not in linha and 'Remunera' not in linha:
                 em_contribuicoes = False
+                em_remuneracoes = False
 
         # Detectar quando entramos numa seção de "Relações Previdenciárias" que contém info do vínculo
         # Tipo Filiado Vínculo aparece antes das contribuições de cada vínculo
         if 'Tipo Filiado' in linha:
             em_contribuicoes = False
+            em_remuneracoes = False
             i += 1
             continue
 
         # Cabeçalhos de coluna — pular
         if linha in ('Compet.', 'Contribuição', 'Indicadores', 'Salário Contrib.',
-                      'Data Pgto.', 'Competência', 'Competência'):
+                      'Data Pgto.', 'Competência', 'Competência', 'Remuneração'):
             i += 1
             continue
 
-        if not em_contribuicoes:
-            # Reativar se encontramos cabeçalho de contribuições
+        if not em_contribuicoes and not em_remuneracoes:
+            # Reativar se encontramos cabeçalho de contribuições ou remunerações
             if 'Compet.' in linha and i + 1 < len(linhas):
                 prox = linhas[i + 1] if i + 1 < len(linhas) else ''
-                if 'Contribui' in prox or _RE_COMP.match(prox):
-                    em_contribuicoes = True
+                if 'Contribui' in prox or 'Remunera' in prox or _RE_COMP.match(prox):
+                    if 'Contribui' in prox:
+                        em_contribuicoes = True
+                        em_remuneracoes = False
+                    elif 'Remunera' in prox:
+                        em_remuneracoes = True
+                        em_contribuicoes = False
             i += 1
             continue
 
-        # Tentar ler uma entrada de contribuição
+        # Tentar ler uma entrada de contribuição ou remuneração
         if _RE_COMP.match(linha):
             comp = linha
             indicadores = set()
@@ -245,9 +288,10 @@ def parse_painel_cidadao(texto):
             sal_contrib = None
 
             # Olhar as próximas linhas para coletar dados desta competência
+            # Aumentado para 30 linhas para capturar indicadores/remuneração distantes
             j = i + 1
             valores_encontrados = []
-            while j < len(linhas) and j < i + 8:
+            while j < len(linhas) and j < i + 30:
                 lj = linhas[j]
 
                 # Se encontrei outra competência, para
@@ -430,14 +474,21 @@ def parse_contribuicao_recolhimento(texto):
                 valor_contrib = valores[0] if len(valores) >= 1 else None
                 valor_autenticado = valores[-1] if len(valores) >= 2 else valor_contrib
 
-                if comp not in resultados:
+                # Se já existe esta competência, usar o MAIOR valor (último pagamento pode ser complemento)
+                if comp in resultados:
+                    # Manter o maior valor encontrado
+                    if valor_contrib and valor_contrib > resultados[comp].get('valor_contrib', 0):
+                        resultados[comp] = {
+                            'valor_contrib': valor_contrib,
+                            'valor_autenticado': valor_autenticado,
+                            'codigo': codigo,
+                        }
+                else:
                     resultados[comp] = {
                         'valor_contrib': valor_contrib,
                         'valor_autenticado': valor_autenticado,
                         'codigo': codigo,
                     }
-                # Se já existe, podemos ter múltiplas GPS para mesma competência
-                # (ex: pagamento parcial + complemento). Manter a primeira.
 
             i = j if j > i + 1 else i + 1
             continue
@@ -459,7 +510,8 @@ def processar(dados_painel, dados_contrib):
     """
     rows_by_code = {}
     text_report = []
-    warnings_extemporaneos = []  # Lista para alertas de extemporâneos
+    warnings_extemporaneos = []
+    regras_3c_aplicadas = []  # Rastrear competências afetadas pela Regra 3C experimental  # Lista para alertas de extemporâneos
 
     # Unificar todas as competências
     todas_comps = set(dados_painel.keys()) | set(dados_contrib.keys())
@@ -472,13 +524,33 @@ def processar(dados_painel, dados_contrib):
         contrib = dados_contrib.get(comp_str, {})
 
         indicadores = painel.get('indicadores', set())
-        contribuicao = painel.get('contribuicao') or contrib.get('valor_contrib')
-        sal_contrib = painel.get('sal_contrib')
+        # PRIORIZAR valor de contrib (mais confiável) sobre painel
+        # O parser do painel tem bugs com PDF de 2 colunas
+        contribuicao = contrib.get('valor_contrib') or painel.get('contribuicao')
+        sal_contrib = contrib.get('valor_autenticado') or painel.get('sal_contrib')
         tipo_filiado = painel.get('tipo_filiado', 'Indefinido')
         codigo_original = contrib.get('codigo')
 
+        # Calcular is_decadente e is_post_reforma cedo para a verificação de exceção
+        m, y = int(comp_str[:2]), int(comp_str[3:])
+        comp_date = datetime.date(y, m, 1)
+        is_post_reforma = comp_date > DATA_REFORMA
+        is_decadente = comp_date < DATA_DECADENCIA_5Y
+
+        # Pular competências sem dados suficientes
+        # EXCEÇÃO: Competências na seção Remunerações com tipo 'Empregado' mas sem indicadores
+        # podem ser na verdade CI com parser imperfeito. Se for decadente, sem contribuição,
+        # E a remuneração for baixa (< 20% do SM da época, típico de CI), processar como CI.
         if not indicadores and not codigo_original:
-            continue  # Sem dados suficientes
+            # Verificar se é candidato a CI com parser imperfeito
+            # Padrão: Tipo 'Empregado' (pode ser CI mal capturado) + decadente + sem contribuição
+            # + remuneração baixa (< 20% do SM, típico de CI facultativo)
+            sm = get_minimo(comp_date)
+            if (tipo_filiado == 'Empregado' and is_decadente and 
+                sal_contrib and sal_contrib < (sm * 0.20)):
+                pass  # Não pular, pode ser processado como caso especial na Regra 3C
+            else:
+                continue  # Sem dados suficientes
 
         # Verificação de Extemporâneos / Pendências
         # Verificação de Extemporâneos / Pendências
@@ -498,8 +570,9 @@ def processar(dados_painel, dados_contrib):
             )
 
         sm = get_minimo(comp_date)
-        is_post_reforma = comp_date > DATA_REFORMA
-        is_decadente = comp_date < DATA_DECADENCIA_5Y
+        # is_post_reforma e is_decadente já foram calculados antes (linha 536-537)
+        # is_post_reforma = comp_date > DATA_REFORMA
+        # is_decadente = comp_date < DATA_DECADENCIA_5Y
 
         final_code = None
         final_value = None
@@ -634,27 +707,77 @@ def processar(dados_painel, dados_contrib):
                 continue
             else:
                 # CENÁRIO B: GPS (Pré-Reforma)
-                
+
                 # SE FOR EMPREGADO / DOMÉSTICO / AVULSO:
                 # A responsabilidade é do empregador. O segurado NÃO paga complemento.
-                # O tempo CONTA (exceto se houver fraude, mas a falta de pagamento não penaliza o empregado).
+                # EXCEÇÃO: Se não há contribuição e é decadente, pode ser CI com parser imperfeito.
                 if tipo_filiado in ('Empregado', 'Doméstico', 'Avulso'):
-                     # Pode-se logar um aviso, mas NÃO gerar GPS.
-                     # text_report.append(f"Aviso: {comp_str} (Empregado) abaixo do mínimo. Tempo conta normal.")
-                     continue
+                    # Verificar se é candidato a CI com parser imperfeito
+                    if not contrib and is_decadente:
+                        # CI sem contribuição (decadente) → 20% do SM (valor cheio, não diferença)
+                        final_code = '1902'
+                        final_value = round(sm * 0.20, 2)
+                        motivo = f"CI sem contribuição (decadente, parser). SM {fmt_val(sm)} × 20%"
+                        regras_3c_aplicadas.append(comp_str)
+                    else:
+                        # Empregado legítimo → não gera GPS
+                        continue
 
                 # SE FOR CI / FACULTATIVO:
                 # Precisa complementar.
                 # Facultativo: SEMPRE código original (1406/1473/1929), prescrito ou não
                 # CI: 1902 se decadente, 1007 se não
-                if tipo_filiado == 'Facultativo':
+                elif tipo_filiado == 'Facultativo':
                     final_code = codigo_original or '1406'
+                    final_value = diff
+                    motivo = f"Abaixo do mín ({tipo_filiado}). (Devido {fmt_val(valor_devido)} - Pago {fmt_val(val_pago)})"
                 elif is_decadente:
                     final_code = '1902'
+                    final_value = diff
+                    motivo = f"Abaixo do mín ({tipo_filiado}). (Devido {fmt_val(valor_devido)} - Pago {fmt_val(val_pago)})"
                 else:
                     final_code = '1007'
-                final_value = diff
-                motivo = f"Abaixo do mín ({tipo_filiado}). (Devido {fmt_val(valor_devido)} - Pago {fmt_val(val_pago)})"
+                    final_value = diff
+                    motivo = f"Abaixo do mín ({tipo_filiado}). (Devido {fmt_val(valor_devido)} - Pago {fmt_val(val_pago)})"
+
+        # ---------------------------------------------------------------
+        # REGRA 3B: PREC-MENOR-MIN SEM CONTRIBUIÇÃO (contribuição não registrada)
+        # ---------------------------------------------------------------
+        # Caso especial: Indicador no Painel, mas SEM contribuição no arquivo de recolhimento.
+        # Isso indica que a competência existe, mas não foi paga.
+        # Para CI decadente (> 5 anos), gerar GPS 1902 com valor cheio.
+        elif 'PREC-MENOR-MIN' in indicadores and not contrib:
+            # Sem contribuição registrada → considerar como não pago
+            # Para CI decadente, usar código 1902 com 20% do SM
+            if tipo_filiado == 'CI' and is_decadente:
+                final_code = '1902'
+                final_value = round(sm * 0.20, 2)  # 20% do SM (valor cheio)
+                motivo = f"CI sem contribuição (decadente). SM {fmt_val(sm)} × 20%"
+            elif tipo_filiado == 'CI' and not is_decadente:
+                # Pós-reforma, não decadente → DARF
+                final_code = '1007'
+                final_value = round(sm * 0.20, 2)
+                motivo = f"CI sem contribuição. SM {fmt_val(sm)} × 20%"
+
+        # ---------------------------------------------------------------
+        # REGRA 3C: CI SEM CONTRIBUIÇÃO (parser imperfeito - padrão genérico)
+        # ---------------------------------------------------------------
+        # Detecta competências onde o parser capturou tipo 'Empregado' mas:
+        # - Não há indicadores (típico de CI na seção Remunerações)
+        # - Não há contribuição no arquivo de recolhimento
+        # - É decadente (> 5 anos)
+        # - Remuneração é baixa (< 20% do SM, típico de CI facultativo)
+        # Isso ocorre quando o PDF tem estrutura complexa com múltiplos vínculos.
+        # Solução: Tratar como CI decadente sem contribuição → GPS 1902 com 20% do SM.
+        # ⚠️ ATENÇÃO: Esta regra é EXPERIMENTAL e pode gerar falsos positivos.
+        # Revise as competências geradas antes de usar.
+        elif (tipo_filiado == 'Empregado' and is_decadente and 
+              not contrib and sal_contrib and sal_contrib < (sm * 0.20)):
+            # CI sem contribuição (decadente) → 20% do SM
+            final_code = '1902'
+            final_value = round(sm * 0.20, 2)
+            motivo = f"CI sem contribuição (decadente, parser). SM {fmt_val(sm)} × 20% (EXPERIMENTAL)"
+            regras_3c_aplicadas.append(comp_str)
 
         # ---------------------------------------------------------------
         # REGRA 4: CI (código 1007) com valor pago < 20% do SM
@@ -744,7 +867,26 @@ def processar(dados_painel, dados_contrib):
         # Nenhuma regra aplicável
         # ---------------------------------------------------------------
         else:
-            continue
+            # ---------------------------------------------------------------
+            # REGRA 3C (fallback): CI SEM CONTRIBUIÇÃO (padrão genérico)
+            # ---------------------------------------------------------------
+            # Detecta competências onde o parser capturou tipo 'Empregado' mas:
+            # - Não há indicadores (típico de CI na seção Remunerações)
+            # - Não há contribuição no arquivo de recolhimento
+            # - É decadente (> 5 anos)
+            # Isso ocorre quando o PDF tem estrutura complexa com múltiplos vínculos.
+            # Solução: Tratar como CI decadente sem contribuição → GPS 1902 com 20% do SM.
+            # NOTA: Esta regra pode gerar falsos positivos para Empregados legítimos.
+            # Use com cautela e revise os resultados.
+            if (tipo_filiado == 'Empregado' and is_decadente and 
+                not contrib and sal_contrib and sal_contrib < (sm * 0.20)):
+                # CI sem contribuição (decadente) → 20% do SM
+                final_code = '1902'
+                final_value = round(sm * 0.20, 2)
+                motivo = f"CI sem contribuição (decadente, parser). SM {fmt_val(sm)} × 20% (EXPERIMENTAL)"
+                regras_3c_aplicadas.append(comp_str)
+            else:
+                continue
 
         # --- Cenário A/B para complementações (1910, 1295, 1830, Fac.) ---
         # Complementações NÃO têm trava de Cenário A. Vão sempre para GPS.
@@ -761,13 +903,13 @@ def processar(dados_painel, dados_contrib):
                 valor=fmt_val(final_value),
             ))
 
-    return rows_by_code, text_report, warnings_extemporaneos
+    return rows_by_code, text_report, warnings_extemporaneos, regras_3c_aplicadas
 
 
 # ===========================================================================
 # GERAÇÃO DE SAÍDA
 # ===========================================================================
-def gerar_saida(rows_by_code, text_report, warnings_extemporaneos, output_dir='.'):
+def gerar_saida(rows_by_code, text_report, warnings_extemporaneos, regras_3c_aplicadas, output_dir='.'):
     """Gera arquivos HTML e exibe relatório DARF e alertas."""
 
     print("\n" + "=" * 60)
@@ -814,6 +956,19 @@ def gerar_saida(rows_by_code, text_report, warnings_extemporaneos, output_dir='.
             print(f"  {w}")
         print("!" * 60)
 
+    if regras_3c_aplicadas:
+        print("\n" + "⚠️" * 30)
+        print(" ATENCAO: REGRA 3C EXPERIMENTAL APLICADA")
+        print("⚠️" * 30)
+        print(f" {len(regras_3c_aplicadas)} competencias foram processadas pela Regra 3C")
+        print(" (parser imperfeito - Empregado sem contribuicao).")
+        print(" Estas competencias PODEM SER FALSOS POSITIVOS.")
+        print(" Competencias:")
+        for comp in sorted(regras_3c_aplicadas):
+            print(f"   - {comp}")
+        print("⚠️" * 30)
+        print(" REVISE MANUALMENTE ANTES DE USAR!")
+
     print("\n" + "=" * 60)
 
 
@@ -823,7 +978,7 @@ def gerar_saida(rows_by_code, text_report, warnings_extemporaneos, output_dir='.
 def main():
     """
     Uso:
-      py process_cnis_v2.py <painelCidadao.pdf> <contribuicaoRecolhimento.pdf>
+      py process_cnis_v2.py <painelCidadao.pdf> <contribuicaoRecolhimento.pdf> [contribuicaoRecolhimento_2.pdf ...]
 
     Ou, se os arquivos estiverem na pasta 'anexos/':
       py process_cnis_v2.py
@@ -831,36 +986,41 @@ def main():
     # Determinar caminhos dos PDFs
     if len(sys.argv) >= 3:
         painel_path = sys.argv[1]
-        contrib_path = sys.argv[2]
+        contrib_paths = sys.argv[2:]  # Múltiplos arquivos de contribuição
     else:
         # Buscar na pasta anexos/ por padrão
         base_dir = os.path.dirname(os.path.abspath(__file__))
         anexos_dir = os.path.join(base_dir, 'anexos')
 
         painel_path = None
-        contrib_path = None
+        contrib_paths = []
 
         if os.path.isdir(anexos_dir):
-            for f in os.listdir(anexos_dir):
+            for f in sorted(os.listdir(anexos_dir)):  # Ordenado para consistência
                 fl = f.lower()
                 if 'painel' in fl and fl.endswith('.pdf'):
                     painel_path = os.path.join(anexos_dir, f)
                 elif 'contribui' in fl and fl.endswith('.pdf'):
-                    contrib_path = os.path.join(anexos_dir, f)
+                    contrib_paths.append(os.path.join(anexos_dir, f))
 
-        if not painel_path or not contrib_path:
-            print("Uso: py process_cnis_v2.py <painelCidadao.pdf> <contribuicaoRecolhimento.pdf>")
+        if not painel_path or not contrib_paths:
+            print("Uso: py process_cnis_v2.py <painelCidadao.pdf> <contribuicaoRecolhimento.pdf> [...]")
             print("Ou coloque os PDFs na pasta 'anexos/'.")
             sys.exit(1)
 
     print(f"[PDF] Painel Cidadao:  {painel_path}")
-    print(f"[PDF] Contribuicao:    {contrib_path}")
+    for cp in contrib_paths:
+        print(f"[PDF] Contribuicao:    {cp}")
     print(f"[DAT] Data de hoje:    {DATA_HOJE.strftime('%d/%m/%Y')}")
     print(f"[DAT] Limite 5 anos:   {DATA_DECADENCIA_5Y.strftime('%d/%m/%Y')}")
 
     # Extrair texto dos PDFs
     texto_painel = extrair_texto_pdf(painel_path)
-    texto_contrib = extrair_texto_pdf(contrib_path)
+    
+    # Concatenar textos de todos os arquivos de contribuição
+    texto_contrib = ""
+    for cp in contrib_paths:
+        texto_contrib += extrair_texto_pdf(cp) + "\n"
 
     # Parsear
     dados_painel = parse_painel_cidadao(texto_painel)
@@ -871,10 +1031,10 @@ def main():
 
     # Processar regras de negócio
     output_dir = os.path.dirname(os.path.abspath(__file__))
-    rows_by_code, text_report, warnings_extemporaneos = processar(dados_painel, dados_contrib)
+    rows_by_code, text_report, warnings_extemporaneos, regras_3c_aplicadas = processar(dados_painel, dados_contrib)
 
     # Gerar saída
-    gerar_saida(rows_by_code, text_report, warnings_extemporaneos, output_dir)
+    gerar_saida(rows_by_code, text_report, warnings_extemporaneos, regras_3c_aplicadas, output_dir)
 
 
 if __name__ == '__main__':

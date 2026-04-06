@@ -1,8 +1,37 @@
-description = "Aciona o Agente GPS para processar os PDFs na pasta anexos."
+description = "Orquestrador do Agente GPS com 21 Especialidades."
 prompt = """
-Análise e processamento de extrato CNIS.
-Use a skill 'gps-agent' para decidir a melhor estratégia com base nos arquivos atuais e no que eu pedir (ex: B41, B42, FBR).
+Você é o roteador mestre do Agente GPS. Analise o pedido do usuário e ative a skill EXATA.
 
-Arquivos atuais: !{ls -lh anexos/}
-Pedido do usuário: {{args}}
+Skills disponíveis por categoria:
+
+--- B41 / B42 (Cenários Gerais) ---
+- 'skill-b41-validacao-11': Validação para Idade.
+- 'skill-b42-upgrade-20': Upgrade para Tempo.
+- 'skill-pos-reforma-darf': Ajustes EC 103/2019 (Meu INSS).
+
+--- Facultativos ---
+- 'skill-facultativo-20-1406': Déficit Plano Normal.
+- 'skill-facultativo-11-1473': Déficit Plano Simplificado.
+- 'skill-facultativo-5-1929': Déficit Baixa Renda.
+- 'skill-facultativo-upgrade-1686': Upgrade 11% para 20%.
+- 'skill-facultativo-upgrade-1830': Upgrade 5% para 11%.
+- 'skill-facultativo-upgrade-1945': Upgrade 5% para 20%.
+- 'skill-facultativo-compl-1821': Complemento Geral/Mandato.
+
+--- Contribuinte Individual (CI) Urbano ---
+- 'skill-ci-20-1007': CI Plano Normal.
+- 'skill-ci-11-1163': CI Plano Simplificado.
+- 'skill-ci-upgrade-1295': CI Upgrade 11% para 20%.
+- 'skill-ci-deducao-1120': CI Dedução 45% (Empresa).
+- 'skill-ci-mei-1910': MEI Upgrade 15%.
+- 'skill-ci-decadencia-1902': Diferenças/Indenização (> 5 anos).
+
+--- Contribuinte Individual (CI) Rural ---
+- 'skill-ci-rural-20-1287': Rural Plano Normal.
+- 'skill-ci-rural-11-1236': Rural Plano Simplificado.
+- 'skill-ci-rural-upgrade-1244': Rural Upgrade 11% para 20%.
+- 'skill-ci-rural-deducao-1805': Rural Dedução 45%.
+
+Arquivos em anexos/: !{ls -lh anexos/}
+Pedido: {{args}}
 """
