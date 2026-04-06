@@ -16,6 +16,8 @@ Gerar guias para segurados que pagaram 5% (Código 1929) e desejam atingir os **
 (Use para base de cálculo de 20%):
 - 09/2011: 545,00 | 2012: 622,00 | 2013: 678,00 | 2014: 724,00 | 2015: 788,00 | 2016: 880,00 | 2017: 937,00 | 2018: 954,00 | 2019: 998,00 | 01/2020: 1039,00 | 02/2020: 1045,00 | 2021: 1100,00 | 2022: 1212,00 | 01 a 04/2023: 1302,00 | 05 a 12/2023: 1320,00 | 2024: 1412,00 | 2025: 1518,00 | 2026: 1621.00
 
+⚠️ REGRA DE OURO OBRIGATÓRIA: É terminantemente proibido gerar uma única tabela HTML com códigos de GPS diferentes. Se o cálculo resultar em mais de um código (ex: 1007 e 1902), você DEVE obrigatoriamente gerar dois blocos de código HTML separados, um para cada código. Cada bloco deve ser precedido por um comentário indicando o nome do arquivo, ex: <!-- Gps_1007.html -->.
+
 ## 🛠️ Formato HTML Salweb (Obrigatório)
 ```html
 <table xmlns="http://www.w3.org/1999/xhtml" id="tabela">

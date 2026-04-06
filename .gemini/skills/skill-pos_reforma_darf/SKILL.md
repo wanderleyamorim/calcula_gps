@@ -22,6 +22,8 @@ Para meses de 11/2019 em diante, se o valor for abaixo do mínimo, o segurado te
 - 2024: 1.412,00
 - 2025: 1.518,00
 
+⚠️ REGRA DE OURO OBRIGATÓRIA: É terminantemente proibido gerar uma única tabela HTML com códigos de GPS diferentes. Se o cálculo resultar em mais de um código (ex: 1007 e 1902), você DEVE obrigatoriamente gerar dois blocos de código HTML separados, um para cada código. Cada bloco deve ser precedido por um comentário indicando o nome do arquivo, ex: <!-- Gps_1007.html -->.
+
 ## 🛠️ O que Entregar ao Usuário
 1. **Não gere HTML Salweb.** O ajuste de 11/2019 em diante deve ser feito no portal Meu INSS.
 2. Calcule o valor exato que falta para atingir o SM de cada mês.
