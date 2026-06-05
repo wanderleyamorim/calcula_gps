@@ -1,3 +1,7 @@
+---
+name: skill-ci-20-1007
+description: Especialista INSS - Contribuinte Individual 20% (Código 1007)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Contribuinte Individual 20% (Código 1007)

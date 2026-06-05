@@ -1,3 +1,7 @@
+---
+name: skill-pos-reforma-darf
+description: Especialista INSS - Pós-Reforma e Ajustes EC 103/2019
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Pós-Reforma e Ajustes EC 103/2019

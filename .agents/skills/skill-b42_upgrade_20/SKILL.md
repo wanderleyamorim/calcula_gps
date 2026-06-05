@@ -1,3 +1,7 @@
+---
+name: skill-b42-upgrade-20
+description: Especialista INSS - Upgrade 20% (B42)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Upgrade 20% (B42)

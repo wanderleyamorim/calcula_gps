@@ -1,3 +1,7 @@
+---
+name: skill-facultativo-11-1473
+description: Especialista INSS - Facultativo 11% (Código 1473)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Facultativo 11% (Código 1473)

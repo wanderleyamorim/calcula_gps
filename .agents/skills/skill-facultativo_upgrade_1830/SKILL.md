@@ -1,3 +1,7 @@
+---
+name: skill-facultativo-upgrade-1830
+description: Especialista INSS - Facultativo Upgrade para 11% (Código 1830)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Facultativo Upgrade para 11% (Código 1830)

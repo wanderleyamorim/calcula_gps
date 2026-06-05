@@ -1,3 +1,7 @@
+---
+name: skill-ci-mei-1910
+description: Especialista INSS - MEI Complementação (Código 1910)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - MEI Complementação (Código 1910)

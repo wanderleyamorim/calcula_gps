@@ -1,3 +1,7 @@
+---
+name: skill-ci-rural-20-1287
+description: Especialista INSS - CI Rural 20% (Código 1287)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - CI Rural 20% (Código 1287)

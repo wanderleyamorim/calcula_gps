@@ -1,3 +1,7 @@
+---
+name: skill-b41-validacao-11
+description: Especialista INSS - Validação 11% (B41)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Validação 11% (B41)

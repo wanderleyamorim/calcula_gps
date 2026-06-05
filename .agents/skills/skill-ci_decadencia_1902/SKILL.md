@@ -1,3 +1,7 @@
+---
+name: skill-ci-decadencia-1902
+description: Especialista INSS - CI Diferenças e Decadência (Código 1902)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - CI Diferenças e Decadência (Código 1902)

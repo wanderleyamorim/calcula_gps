@@ -1,3 +1,7 @@
+---
+name: skill-ci-upgrade-1295
+description: Especialista INSS - CI Upgrade para 20% (Código 1295)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - CI Upgrade para 20% (Código 1295)

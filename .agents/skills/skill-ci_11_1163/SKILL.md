@@ -1,3 +1,7 @@
+---
+name: skill-ci-11-1163
+description: Especialista INSS - CI 11% (Código 1163)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - CI 11% (Código 1163)

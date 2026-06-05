@@ -1,3 +1,7 @@
+---
+name: skill-ci-rural-deducao-1805
+description: Especialista INSS - CI Rural com Dedução 45% (Código 1805)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - CI Rural com Dedução 45% (Código 1805)

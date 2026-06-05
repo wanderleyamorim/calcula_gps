@@ -1,3 +1,7 @@
+---
+name: skill-facultativo-upgrade-1945
+description: Especialista INSS - Facultativo Upgrade para 20% (Código 1945)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Facultativo Upgrade para 20% (Código 1945)

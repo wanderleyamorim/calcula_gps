@@ -1,3 +1,7 @@
+---
+name: skill-facultativo-5-1929
+description: Especialista INSS - Facultativo 5% (Código 1929)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Facultativo 5% (Código 1929)

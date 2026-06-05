@@ -1,3 +1,7 @@
+---
+name: skill-facultativo-compl-1821
+description: Especialista INSS - Complementação Geral (Código 1821)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Complementação Geral (Código 1821)

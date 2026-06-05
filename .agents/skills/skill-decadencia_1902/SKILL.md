@@ -1,3 +1,7 @@
+---
+name: skill-decadencia-1902
+description: Especialista INSS - Decadência e Indenização (> 5 Anos)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Decadência e Indenização (> 5 Anos)

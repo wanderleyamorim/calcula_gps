@@ -1,3 +1,7 @@
+---
+name: skill-facultativo-20-1406
+description: Especialista INSS - Facultativo 20% (Código 1406)
+---
 Para obter os dados do segurado, execute sempre: !{python3 engine_inss.py --json}
 
 # INSTRUÇÃO DO SISTEMA: Especialista INSS - Facultativo 20% (Código 1406)
