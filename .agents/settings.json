@@ -7,7 +7,7 @@
           {
             "name": "check-anexos",
             "type": "command",
-            "command": "bash $GEMINI_PROJECT_DIR/.gemini/hooks/check-anexos.sh"
+            "command": "bash $GEMINI_PROJECT_DIR/.agents/hooks/check-anexos.sh"
           }
         ]
       }
