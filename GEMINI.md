@@ -20,4 +20,4 @@ Este projeto foi reestruturado para máxima eficácia, utilizando 21 Skills inde
 - **CI Rural:** 1287, 1236, 1244, 1805.
 
 ---
-*Última atualização: 06/04/2026*
+*Última atualização: 28/04/2026*
