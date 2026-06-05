@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Engine INSS (v4.0) - Motor de Extração e Cálculo Modular
-Focado em fornecer dados limpos para as Skills do Gemini CLI.
+Focado em fornecer dados limpos para as Skills do Antigravity CLI.
 """
 
 import re

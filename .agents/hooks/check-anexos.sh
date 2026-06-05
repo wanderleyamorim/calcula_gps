@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hook de pré-sessão do Gemini CLI para o projeto Calcula GPS
+# Hook de pré-sessão do Antigravity CLI para o projeto Calcula GPS
 # Identifica novos arquivos na pasta anexos/ e informa ao contexto.
 
 ANEXOS_DIR="$GEMINI_PROJECT_DIR/anexos"
@@ -16,5 +16,5 @@ else
   CONTEXT="Novos arquivos detectados na pasta 'anexos/':\n$FILES\n\nEstes são os PDFs que o usuário quer que você processe hoje. Use a skill 'gps-agent' para analisá-los assim que o usuário der o comando."
 fi
 
-# Retorna JSON conforme especificação do Gemini CLI
+# Retorna JSON conforme especificação do Antigravity CLI
 echo "{\"hookSpecificOutput\": {\"additionalContext\": \"$CONTEXT\"}}"
